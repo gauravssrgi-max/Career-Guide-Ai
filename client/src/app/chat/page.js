@@ -75,7 +75,19 @@ export default function ChatPage() {
               <div key={i} style={{...S.msgRow, justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start'}}>
                 {msg.role === 'assistant' && <div style={S.avatar}>🤖</div>}
                 <div style={{...S.bubble, ...(msg.role === 'user' ? S.userBubble : S.aiBubble)}}>
-                  {msg.content.split('\n').map((line, j) => <p key={j} style={{marginTop: j > 0 ? 8 : 0}}>{line}</p>)}
+                  {msg.content.replace(/\*\*/g,'').replace(/\*/g,'').split('\n').filter(l => l.trim()).map((line, j) => {
+                    const numbered = line.match(/^(\d+)\.\s*(.+?)(\s*[-–—]\s*)(.+)$/);
+                    if (numbered) {
+                      return (
+                        <p key={j} style={{marginTop: j > 0 ? 10 : 0, lineHeight: 1.7}}>
+                          <span style={{color:'var(--accent)',fontWeight:700}}>{numbered[1]}.</span>{' '}
+                          <span style={{fontWeight:700,color:'var(--text-primary)'}}>{numbered[2].trim()}</span>
+                          <span style={{color:'var(--text-secondary)'}}> — {numbered[4].trim()}</span>
+                        </p>
+                      );
+                    }
+                    return <p key={j} style={{marginTop: j > 0 ? 10 : 0, lineHeight: 1.7}}>{line}</p>;
+                  })}
                 </div>
               </div>
             ))}
