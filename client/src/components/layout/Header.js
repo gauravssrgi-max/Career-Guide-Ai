@@ -16,10 +16,11 @@ import LoginModal from '../LoginModal';
 import styles from './Header.module.css';
 
 export default function Header() {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, loading: authLoading } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [showLogin, setShowLogin] = useState(false);
   const pathname = usePathname();
+  const displayName = user?.name || user?.email?.split('@')[0] || 'Account';
 
   const navLinks = [
     { name: 'Survey', href: '/survey' },
@@ -57,10 +58,12 @@ export default function Header() {
             <button onClick={toggleTheme} className={styles.themeToggle} aria-label="Toggle theme">
               {theme === 'dark' ? '☀️' : '🌙'}
             </button>
-            {isAuthenticated ? (
+            {authLoading ? (
+              <span className={styles.authLoading}>Checking...</span>
+            ) : isAuthenticated ? (
               <div className={styles.userMenu}>
                 <span className={styles.userName} title={user?.email}>
-                  {user?.name || user?.email?.split('@')[0]}
+                  {displayName}
                 </span>
                 <button onClick={logout} className="btn btn-ghost btn-sm">Logout</button>
               </div>

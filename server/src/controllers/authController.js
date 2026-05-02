@@ -17,6 +17,11 @@ const DEMO_USER = {
   createdAt: new Date(),
 };
 
+const isGenericName = (name) => {
+  const normalized = (name || '').trim().toLowerCase();
+  return !normalized || normalized === 'user' || normalized === 'demo' || normalized === 'demo user';
+};
+
 // Register
 exports.register = async (req, res, next) => {
   try {
@@ -104,10 +109,23 @@ exports.googleAuth = async (req, res, next) => {
       user.badges.push({ name: 'Welcome Explorer', icon: '🌟' });
       user.xp += 10;
       await user.save();
-    } else if (!user.googleId) {
-      user.googleId = googleId;
-      if (avatar) user.avatar = avatar;
-      await user.save();
+    } else {
+      let changed = false;
+      if (!user.googleId && googleId) {
+        user.googleId = googleId;
+        changed = true;
+      }
+      if (name && (isGenericName(user.name) || user.name !== name)) {
+        user.name = name;
+        changed = true;
+      }
+      if (avatar && user.avatar !== avatar) {
+        user.avatar = avatar;
+        changed = true;
+      }
+      if (changed) {
+        await user.save();
+      }
     }
 
     const token = generateToken(user._id);

@@ -5,10 +5,15 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../lib/api';
 
+const isGenericName = (name) => {
+  const normalized = (name || '').trim().toLowerCase();
+  return !normalized || normalized === 'user' || normalized === 'demo' || normalized === 'demo user';
+};
+
 export default function DashboardPage() {
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { user: authUser, isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -23,13 +28,16 @@ export default function DashboardPage() {
   if (!dashboard) return <div style={{ minHeight: 'calc(100vh - 64px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p>Unable to load</p></div>;
 
   const { user: u, savedCareers, surveysCompleted, stats } = dashboard;
+  const displayName = isGenericName(u?.name)
+    ? (authUser?.name || authUser?.email?.split('@')[0] || 'User')
+    : u.name;
 
   return (
     <div style={{ minHeight: 'calc(100vh - 64px)', padding: '40px 16px' }} className="page-enter">
       <div className="container" style={{ maxWidth: 1000 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
           <div>
-            <h1 className="heading-md">Welcome, <span className="text-gradient">{u.name}</span> 👋</h1>
+            <h1 className="heading-md">Welcome, <span className="text-gradient">{displayName}</span> 👋</h1>
             <p className="text-sm" style={{ color: 'var(--text-secondary)', marginTop: 4 }}>Your career exploration progress</p>
           </div>
           <Link href="/survey" className="btn btn-primary btn-sm">New Survey →</Link>

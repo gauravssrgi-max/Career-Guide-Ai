@@ -34,6 +34,7 @@
 .themeToggle:hover { transform: rotate(30deg); }
 .userMenu { display: flex; align-items: center; gap: 8px; }
 .userName { font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); }
+.authLoading { font-size: 0.85rem; color: var(--text-tertiary); }
 
 @media (max-width: 768px) {
   .nav { display: none; }
