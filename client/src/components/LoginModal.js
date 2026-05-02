@@ -93,40 +93,6 @@ export default function LoginModal({ isOpen, onClose }) {
             Continue with GitHub
           </button>
         </div>
-
-        <div style={S.divider}><span>or</span></div>
-
-        {/* Email/Password form */}
-        <form onSubmit={handleSubmit}>
-          {!isLogin && (
-            <div style={{marginBottom: 14}}>
-              <label style={S.label}>Full Name</label>
-              <input style={S.input} type="text" placeholder="John Doe" value={form.name}
-                onChange={e => setForm({...form, name: e.target.value})} required />
-            </div>
-          )}
-          <div style={{marginBottom: 14}}>
-            <label style={S.label}>Email</label>
-            <input style={S.input} type="email" placeholder="you@example.com" value={form.email}
-              onChange={e => setForm({...form, email: e.target.value})} required />
-          </div>
-          <div style={{marginBottom: 14}}>
-            <label style={S.label}>Password</label>
-            <input style={S.input} type="password" placeholder="••••••••" value={form.password}
-              onChange={e => setForm({...form, password: e.target.value})} required minLength={6} />
-          </div>
-
-          <button type="submit" style={S.submitBtn} disabled={loading}>
-            {loading ? '...' : (isLogin ? 'Sign In' : 'Create Account')}
-          </button>
-        </form>
-
-        <p style={S.toggle}>
-          {isLogin ? "Don't have an account? " : "Already have an account? "}
-          <button onClick={() => { setIsLogin(!isLogin); setError(''); }} style={S.toggleBtn}>
-            {isLogin ? 'Sign Up' : 'Sign In'}
-          </button>
-        </p>
       </div>
     </>
   );

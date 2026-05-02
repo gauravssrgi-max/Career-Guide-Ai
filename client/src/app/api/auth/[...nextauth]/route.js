@@ -15,25 +15,6 @@ const handler = NextAuth({
       clientId: process.env.GITHUB_CLIENT_ID || '',
       clientSecret: process.env.GITHUB_CLIENT_SECRET || '',
     }),
-    // Email/Password Login
-    CredentialsProvider({
-      name: 'credentials',
-      credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
-      },
-      async authorize(credentials) {
-        // Demo user for testing
-        if (credentials.email === 'demo@careerguide.ai' && credentials.password === 'demo123456') {
-          return { id: 'demo-1', name: 'Demo User', email: 'demo@careerguide.ai', image: null };
-        }
-        // In production, verify against your database here
-        if (credentials.email && credentials.password?.length >= 6) {
-          return { id: Date.now().toString(), name: credentials.email.split('@')[0], email: credentials.email };
-        }
-        return null;
-      },
-    }),
   ],
   pages: {
     signIn: '/login',
