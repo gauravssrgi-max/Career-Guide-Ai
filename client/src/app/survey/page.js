@@ -194,9 +194,9 @@ export default function SurveyPage() {
               : (currentStep.id === 'confusion' ? confusionLevel === o.value : answers[currentStep.id] === o.value);
             return (
               <button key={o.value} className="card" onClick={() => handleSelect(currentStep, o.value)}
-                style={{ ...S.option, borderColor: selected ? 'var(--accent)' : 'var(--border)', background: selected ? 'var(--accent-gradient-subtle)' : 'var(--bg-secondary)' }}>
-                <span style={{fontSize:'1.1rem',fontWeight:600}}>{o.label}</span>
-                {o.desc && <span className="text-sm" style={{color:'var(--text-secondary)'}}>{o.desc}</span>}
+                style={{ ...S.option, borderColor: selected ? 'var(--accent)' : 'var(--border)', background: selected ? 'var(--accent-gradient-subtle)' : 'var(--bg-secondary)', boxShadow: selected ? '0 0 20px rgba(99,102,241,0.3)' : 'none' }}>
+                <span style={{fontSize:'1.15rem',fontWeight:700,color: selected ? 'var(--accent-light)' : 'var(--text-primary)'}}>{o.label}</span>
+                {o.desc && <span className="text-sm" style={{color: selected ? 'var(--accent-light)' : '#cbd5e1',opacity: selected ? 1 : 0.85}}>{o.desc}</span>}
               </button>
             );
           })}
