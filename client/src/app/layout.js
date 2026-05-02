@@ -1,6 +1,7 @@
 import './globals.css';
 import { AuthProvider } from '../context/AuthContext';
 import { ThemeProvider } from '../context/ThemeContext';
+import AuthSessionProvider from '../components/AuthSessionProvider';
 import Header from '../components/layout/Header';
 
 export const metadata = {
@@ -17,10 +18,12 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <ThemeProvider>
-          <AuthProvider>
-            <Header />
-            <main>{children}</main>
-          </AuthProvider>
+          <AuthSessionProvider>
+            <AuthProvider>
+              <Header />
+              <main>{children}</main>
+            </AuthProvider>
+          </AuthSessionProvider>
         </ThemeProvider>
       </body>
     </html>
