@@ -77,7 +77,7 @@ app.listen(PORT, () => {
   console.log(`
   ╔══════════════════════════════════════════╗
   ║   🚀 Career Guide AI API Server         ║
-  ║   Running on port ${PORT}                  ║
+  ║   Running on port ${PORT}                ║
   ║   Environment: ${process.env.NODE_ENV || 'development'}            ║
   ╚══════════════════════════════════════════╝
   `);
