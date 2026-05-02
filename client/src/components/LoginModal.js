@@ -10,7 +10,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function LoginModal({ isOpen, onClose }) {
   const [isLogin, setIsLogin] = useState(true);
