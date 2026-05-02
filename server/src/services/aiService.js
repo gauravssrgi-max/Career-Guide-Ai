@@ -3,45 +3,83 @@
  * 
  * This module handles all AI-related functionality including:
  * - Career recommendations based on student survey responses
- * - Chat-based career mentoring using OpenAI
+ * - Chat-based career mentoring using Gemini with optional OpenAI fallback
  * - Skill gap analysis for target careers
  * - Risk assessment for different career paths
  * 
- * Uses OpenAI's Responses API (gpt-5.4-mini) when available,
- * falls back to curated mock responses for offline/demo mode.
+ * Uses Gemini first when available, then optional OpenAI fallback,
+ * then curated mock responses for offline/demo mode.
  * 
  * @author Gaurav Kumar Shah
  * @version 2.0
  */
 
 const OpenAI = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+
+const AI_PROVIDER = (process.env.AI_PROVIDER || 'gemini').toLowerCase();
+const ALLOW_OPENAI_FALLBACK = process.env.ALLOW_OPENAI_FALLBACK === 'true' || AI_PROVIDER === 'openai';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-flash-lite-latest';
 
 class AIService {
   constructor() {
-    // Check if we have a valid API key configured
+    // OpenAI Setup
     const apiKey = process.env.OPENAI_API_KEY;
     this.isConnected = !!(apiKey && apiKey.startsWith('sk-'));
-
     if (this.isConnected) {
       this.openai = new OpenAI({ apiKey });
-      console.log('✅ OpenAI GPT-5.4-mini connected');
-    } else {
-      console.warn('⚠️  No OpenAI key found — running in demo mode');
+      console.log('✅ OpenAI connected');
+    }
+
+    // Gemini Setup (Primary)
+    const geminiKey = process.env.GEMINI_API_KEY;
+    if (geminiKey && geminiKey !== 'YOUR_GEMINI_KEY_HERE') {
+      this.genAI = new GoogleGenerativeAI(geminiKey);
+      this.geminiModel = this.genAI.getGenerativeModel({ model: GEMINI_MODEL });
+      console.log(`✅ Gemini AI connected (${GEMINI_MODEL})`);
+    }
+
+    // HuggingFace Setup (Secondary Fallback)
+    this.hfKey = process.env.HUGGINGFACE_API_KEY;
+    if (this.hfKey) {
+      console.log('✅ HuggingFace Backup connected');
     }
   }
 
   /**
    * Send a prompt to OpenAI and get a response
-   * Uses the new Responses API format
+   * Uses standard Chat Completions API
    */
   async _askAI(prompt, systemInstructions = '') {
-    const response = await this.openai.responses.create({
-      model: 'gpt-5.4-mini',
-      input: prompt,
-      instructions: systemInstructions || undefined,
-      store: false,
+    const response = await this.openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemInstructions },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.7,
     });
-    return response.output_text.trim();
+    return response.choices[0].message.content.trim();
+  }
+
+  async _askBestAI(prompt, systemInstructions = '') {
+    if (this.geminiModel && AI_PROVIDER !== 'openai') {
+      try {
+        return await this._askGeminiPrompt(prompt, systemInstructions);
+      } catch (err) {
+        console.error('Gemini failed:', err.message);
+      }
+    }
+
+    if (this.isConnected && ALLOW_OPENAI_FALLBACK) {
+      try {
+        return await this._askAI(prompt, systemInstructions);
+      } catch (err) {
+        console.error('OpenAI fallback failed:', err.message);
+      }
+    }
+
+    return null;
   }
 
   /**
@@ -65,7 +103,7 @@ class AIService {
    * Returns top 3 career matches with detailed analysis
    */
   async recommendCareers(surveyAnswers) {
-    if (!this.isConnected) return this._getDefaultRecommendations(surveyAnswers);
+    if (!this.geminiModel && !this.isConnected) return this._getDefaultRecommendations(surveyAnswers);
 
     try {
       const interests = (surveyAnswers.interests || []).join(', ');
@@ -86,9 +124,10 @@ class AIService {
 Recommend exactly 3 careers. Return ONLY valid JSON:
 {"careers":[{"title":"name","overview":"2 lines","whyThisCareer":"why fits","salaryRange":{"entry":"₹X LPA"},"difficulty":3,"growthRate":"20%","futureScope":"outlook","riskScore":25,"requiredSkills":["s1","s2"],"category":"technology"}],"analysis":"brief","confusionAdvice":"advice or empty"}`;
 
-      const aiResponse = await this._askAI(prompt, 
+      const aiResponse = await this._askBestAI(prompt,
         'You are an expert Indian career counselor. Return ONLY valid JSON, no markdown fences.'
       );
+      if (!aiResponse) return this._getDefaultRecommendations(surveyAnswers);
 
       const parsed = this._parseJSON(aiResponse);
       if (parsed?.careers) return parsed;
@@ -103,52 +142,101 @@ Recommend exactly 3 careers. Return ONLY valid JSON:
 
   /**
    * Handle chat conversation with the AI mentor
-   * Formats conversation history and sends to OpenAI
+   * Formats conversation history and sends it to the configured AI provider
    */
   async chat(messages, userContext = {}) {
-    if (!this.isConnected) return this._getDemoChat(messages);
-
     try {
-      // Build conversation history string for the AI
-      const conversationHistory = messages
-        .map(msg => `${msg.role}: ${msg.content}`)
-        .join('\n');
+      // 1. TRY GEMINI FIRST (Primary & Free)
+      if (this.geminiModel) {
+        console.log('🔄 Using Gemini AI (Primary)...');
+        const geminiResponse = await this._askGemini(messages);
+        if (geminiResponse) return { response: geminiResponse, tokens: 0 };
+      }
 
-      const mentorInstructions = `You are "Career Guide AI", a direct and clear career advisor for Indian students.
+      // 2. OPTIONAL FALLBACK TO OPENAI
+      if (this.isConnected && ALLOW_OPENAI_FALLBACK) {
+        console.log('🔄 Trying OpenAI...');
+        const conversationHistory = messages.map(msg => `${msg.role}: ${msg.content}`).join('\n');
+        const mentorInstructions = `You are "Career Guide AI Agent", a professional career strategist for Indian students. AGENT PROTOCOLS: Analyze user background. Greet by name. Ask for Qualification -> Stream -> Interest. Provide 3-4 careers with INR LPA salaries. NO markdown. 2 emojis max.`;
+        const aiResponse = await this._askAI(conversationHistory, mentorInstructions);
+        return { response: this._cleanAIResponse(aiResponse), tokens: 0 };
+      }
 
-STRICT FORMAT RULES:
-- EACH numbered option MUST be on its OWN line, separated by a newline character
-- NEVER put multiple numbered items on the same line
-- Use NUMBERED lists (1. 2. 3.) with EACH on a NEW LINE
-- NEVER use ** or * or any markdown. Plain text only.
-- NO greetings, NO "congrats", NO "great question"
-- Max 1-2 emojis per response
-- Format each option as: "1. Career Name - X-Y LPA (short description)"
-- End with ONE follow-up question on its own line
-- Be direct and simple
-- Know Indian education: JEE, NEET, UPSC, CAT, GATE
-- Salary in INR LPA
+      throw new Error('No AI connected');
 
-EXAMPLE FORMAT:
-1. Engineering - 4-15 LPA (B.Tech via JEE)
-2. Medical - 6-20 LPA (MBBS via NEET)
-3. Defence - 5-12 LPA (NDA/CDS route)
-Which interests you?`;
-
-      const aiResponse = await this._askAI(conversationHistory, mentorInstructions);
-
-      // Clean up the response - remove any stray markdown and ensure vertical alignment
-      let cleanResponse = aiResponse.replace(/\*\*/g, '').replace(/\*/g, '');
-      cleanResponse = cleanResponse
-        .replace(/(\d+\.\s)/g, '\n$1')   // Force each numbered item to new line
-        .replace(/^\n/, '')               // Remove leading newline
-        .replace(/\n{3,}/g, '\n\n');      // Collapse excessive blank lines
-
-      return { response: cleanResponse.trim(), tokens: 0 };
     } catch (error) {
       console.error('Chat error:', error.message);
+
+      // 3. FALLBACK TO HUGGINGFACE
+      if (process.env.HUGGINGFACE_API_KEY) {
+        console.log('🔄 Trying HuggingFace fallback...');
+        const hfResponse = await this._askHuggingFace(messages);
+        if (hfResponse) return { response: hfResponse, tokens: 0 };
+      }
+
       return this._getDemoChat(messages);
     }
+  }
+
+  /**
+   * Google Gemini AI primary chat path
+   */
+  async _askGemini(messages) {
+    try {
+      const prompt = messages.map(m => `${m.role}: ${m.content}`).join('\n');
+      const result = await this.geminiModel.generateContent(prompt + "\nAssistant: Provide clear career advice for an Indian student. No markdown.");
+      const response = await result.response;
+      return this._cleanAIResponse(response.text());
+    } catch (err) {
+      console.error('Gemini Fallback failed:', err.message);
+    }
+    return null;
+  }
+
+  async _askGeminiPrompt(prompt, systemInstructions = '') {
+    const fullPrompt = [
+      systemInstructions,
+      prompt,
+      'Assistant: Provide clear career advice for an Indian student. No markdown.'
+    ].filter(Boolean).join('\n');
+    const result = await this.geminiModel.generateContent(fullPrompt);
+    const response = await result.response;
+    return this._cleanAIResponse(response.text());
+  }
+
+  /**
+   * HuggingFace Inference API Fallback
+   * Uses Mistral-7B to provide real AI responses when OpenAI is down/limited
+   */
+  async _askHuggingFace(messages) {
+    try {
+      const prompt = messages.map(m => `${m.role === 'user' ? 'Human' : 'Assistant'}: ${m.content}`).join('\n') + '\nAssistant:';
+      const response = await fetch('https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          inputs: prompt,
+          parameters: { max_new_tokens: 250, temperature: 0.7 }
+        })
+      });
+
+      const data = await response.json();
+      if (data && data[0]?.generated_text) {
+        let text = data[0].generated_text.split('Assistant:').pop().trim();
+        return this._cleanAIResponse(text);
+      }
+    } catch (err) {
+      console.error('HuggingFace Fallback failed:', err.message);
+    }
+    return null;
+  }
+
+  _cleanAIResponse(text) {
+    let clean = text.replace(/^#{1,6}\s*/gm, '').replace(/\*\*/g, '').replace(/\*/g, '');
+    return clean.replace(/(\d+\.\s)/g, '\n$1').replace(/^\n/, '').replace(/\n{3,}/g, '\n\n').trim();
   }
 
   /**
@@ -156,14 +244,15 @@ Which interests you?`;
    * Helps students understand what they need to learn
    */
   async analyzeSkillGap(currentSkills, targetCareer) {
-    if (!this.isConnected) return this._getDefaultSkillGap(currentSkills, targetCareer);
+    if (!this.geminiModel && !this.isConnected) return this._getDefaultSkillGap(currentSkills, targetCareer);
 
     try {
       const prompt = `Current skills: ${currentSkills.join(', ')}. 
 Target career: ${targetCareer}. 
 Return JSON: {"matchPercentage":45,"strongSkills":["s1"],"gapSkills":[{"skill":"name","importance":"critical","learningTime":"3 months","resources":"suggestion"}],"learningPath":"steps","timeEstimate":"6 months"}`;
 
-      const aiResponse = await this._askAI(prompt, 'Return ONLY valid JSON.');
+      const aiResponse = await this._askBestAI(prompt, 'Return ONLY valid JSON.');
+      if (!aiResponse) return this._getDefaultSkillGap(currentSkills, targetCareer);
       const parsed = this._parseJSON(aiResponse);
       if (parsed?.matchPercentage !== undefined) return parsed;
     } catch (error) {
@@ -178,13 +267,14 @@ Return JSON: {"matchPercentage":45,"strongSkills":["s1"],"gapSkills":[{"skill":"
    * Considers market demand, stability, and future outlook
    */
   async calculateRiskScore(careerName) {
-    if (!this.isConnected) {
+    if (!this.geminiModel && !this.isConnected) {
       return { riskScore: 30, explanation: 'Connect AI for detailed analysis.' };
     }
 
     try {
       const prompt = `Career risk score (1-100) for "${careerName}" in India. Return JSON: {"riskScore":25,"explanation":"reason","factors":["f1","f2"]}`;
-      const aiResponse = await this._askAI(prompt, 'Return ONLY valid JSON.');
+      const aiResponse = await this._askBestAI(prompt, 'Return ONLY valid JSON.');
+      if (!aiResponse) return { riskScore: 30, explanation: 'Unable to calculate at this time.' };
       const parsed = this._parseJSON(aiResponse);
       if (parsed?.riskScore) return parsed;
     } catch (error) {
@@ -257,19 +347,58 @@ Return JSON: {"matchPercentage":45,"strongSkills":["s1"],"gapSkills":[{"skill":"
    */
   _getDemoChat(messages) {
     const lastMessage = (messages[messages.length - 1]?.content || '').toLowerCase();
-    let reply = "Hi! I'm Career Guide AI 🎯 Ask me about any career, salary, exam, or roadmap!";
 
-    if (lastMessage.includes('salary') || lastMessage.includes('money')) {
-      reply = "Typical salary ranges in India:\n1. Software Engineer - 4-60 LPA\n2. Data Scientist - 6-70 LPA\n3. Doctor - 10-80 LPA\n4. CA - 7-60 LPA\nWhich career interests you?";
-    } else if (lastMessage.includes('confused') || lastMessage.includes("don't know")) {
-      reply = "Totally normal to feel that way! Answer these:\n1. Do you prefer people or computers?\n2. Numbers or words?\n3. Creating or analyzing?\nTell me and I'll help narrow it down!";
-    } else if (lastMessage.includes('engineer') || lastMessage.includes('tech') || lastMessage.includes('coding')) {
-      reply = "Tech careers in India:\n1. Software Engineer - 4-60 LPA\n2. Data Scientist - 6-70 LPA\n3. AI/ML Engineer - 8-1 Cr+\nStart with B.Tech CS via JEE or self-learn online!";
-    } else if (lastMessage.includes('doctor') || lastMessage.includes('neet')) {
-      reply = "Medicine career path:\n1. Study PCB in 11th-12th\n2. Clear NEET exam\n3. MBBS (5.5 years)\n4. Specialization MD/MS (3 years)\nFees: Govt 50K-5L | Private 20L-1Cr\nStarting salary: 6-10 LPA";
+    // 1. Greetings
+    if (lastMessage.includes('hi') || lastMessage.includes('hello') || lastMessage.includes('hey')) {
+      const greetings = [
+        "Hello! I'm your Career AI Agent. To build your roadmap, please tell me your current qualification, interests, and if you prefer office work or field work.",
+        "Hi there! Let's find your perfect career. What's your current qualification and what subjects do you enjoy the most?",
+        "Greetings! I'm ready to assist. Please share your current education level and what kind of work excites you (physical or tech-based)?"
+      ];
+      return { response: greetings[Math.floor(Math.random() * greetings.length)], tokens: 0 };
     }
 
-    return { response: reply, tokens: 0 };
+    // 2. Qualification Detection -> Ask for Stream
+    if (lastMessage.includes('10th') || lastMessage.includes('class 10')) {
+      return { response: "Passing 10th is a big milestone! What are you planning for 11th? Science (PCM/PCB), Commerce, or Arts? Or are you looking for ITI/Diploma?", tokens: 0 };
+    }
+    if (lastMessage === '12' || lastMessage.includes('12th') || lastMessage.includes('class 12')) {
+      return { response: "Great! To give you specific advice, tell me your 12th stream: Science (PCM/PCB), Commerce, or Arts? This helps me suggest the right degrees or jobs.", tokens: 0 };
+    }
+    if (lastMessage.includes('iti')) {
+      return { response: "ITI is great for technical roles. What is your trade (Electrician, Fitter, etc.) and do you want to start a job now or go for a Diploma?", tokens: 0 };
+    }
+    if (lastMessage.includes('diploma') || lastMessage.includes('polytechnic')) {
+      return { response: "Technically sound choice! Which branch are you in (Mechanical, Civil, CS)? Also, are you interested in B.Tech via lateral entry?", tokens: 0 };
+    }
+    if (lastMessage.includes('btech') || lastMessage.includes('b.tech') || lastMessage.includes('engineering')) {
+      return { response: "Engineering offers many paths. What is your branch? Also, do you prefer coding, management, or core technical field work?", tokens: 0 };
+    }
+
+    if (lastMessage.includes('software') || lastMessage.includes('coding') || lastMessage.includes('programming')) {
+      return { response: "Software engineering is a strong career path in India:\n1. Learn programming - Python or JavaScript basics\n2. Build projects - websites, apps, or automation tools\n3. Practice DSA - important for product company interviews\n4. Choose a path - frontend, backend, full-stack, mobile, cloud, or AI\nStarting salary is commonly 4-12 LPA, and strong candidates can grow much higher.\nAre you in 10th, 12th, diploma, or college right now?", tokens: 0 };
+    }
+
+    // 3. Stream/Branch Detection -> Give Advice
+    if (lastMessage.includes('pcm')) {
+      return { response: "With PCM, you have elite options:\n1. Software Engineer - 5-45 LPA\n2. Data Scientist - 6-50 LPA\n3. Defence Service (NDA) - 8-15 LPA\n4. Pilot - 10-60 LPA\nWhich of these sounds exciting to you?", tokens: 0 };
+    }
+    if (lastMessage.includes('pcb')) {
+      return { response: "With PCB, you can focus on healthcare:\n1. Doctor (MBBS) - 10-80 LPA\n2. Biotechnology - 4-18 LPA\n3. Nursing - 3-10 LPA\n4. Physiotherapy - 3-12 LPA\nAre you preparing for NEET?", tokens: 0 };
+    }
+    if (lastMessage.includes('commerce')) {
+      return { response: "Commerce is excellent for finance:\n1. Chartered Accountant (CA) - 8-60 LPA\n2. Investment Banker - 10-80 LPA\n3. Data Analyst - 5-25 LPA\nWhich one would you like to explore?", tokens: 0 };
+    }
+    if (lastMessage.includes('arts') || lastMessage.includes('humanities')) {
+      return { response: "Arts offers creative and stable careers:\n1. UPSC / Civil Services - 8-20 LPA\n2. Digital Marketer - 4-30 LPA\n3. Graphic Designer - 3-15 LPA\nDo you have an interest in government jobs?", tokens: 0 };
+    }
+
+    // 4. Money/Salary
+    if (lastMessage.includes('salary') || lastMessage.includes('money') || lastMessage.includes('pay')) {
+      return { response: "In India, starting salaries vary:\n- Tech/AI: 5-15 LPA\n- Finance/CA: 6-12 LPA\n- Healthcare: 8-15 LPA\n- Skilled Trade: 3-6 LPA\nWhat is your target starting salary?", tokens: 0 };
+    }
+
+    return { response: "I'm analyzing your profile. To give you an 'Agent-level' career roadmap, please tell me your exact qualification (12th, ITI, etc.) and your stream (PCM, Trade, etc.)!", tokens: 0 };
   }
 
   /**

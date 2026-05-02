@@ -6,8 +6,8 @@ const isDBConnected = () => mongoose.connection.readyState === 1;
 
 const DEMO_USER = {
   _id: 'demo-user-id',
-  name: 'Demo User',
-  email: 'demo@careerguide.ai',
+  name: 'User',
+  email: 'user@careerguide.ai',
   savedCareers: [],
   badges: [{ name: 'Welcome Explorer', icon: '🌟', earnedAt: new Date() }],
   preferences: { theme: 'dark' },
@@ -63,7 +63,7 @@ exports.login = async (req, res, next) => {
 
     if (!isDBConnected()) {
       const token = generateToken('demo-user-id');
-      return res.json({ success: true, data: { user: { ...DEMO_USER, email }, token } });
+      return res.json({ success: true, data: { user: { ...DEMO_USER, name: req.body.name || 'User', email }, token } });
     }
 
     const user = await User.findOne({ email }).select('+password');

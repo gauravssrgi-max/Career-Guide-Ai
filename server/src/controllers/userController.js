@@ -11,7 +11,7 @@ exports.getDashboard = async (req, res, next) => {
       return res.json({
         success: true,
         data: {
-          user: { name: req.user.name || 'Demo User', email: req.user.email || 'demo@careerguide.ai', level: 1, xp: 10, xpToNextLevel: 90, badges: [{ name: 'Welcome Explorer', icon: '🌟' }], surveyCompleted: false, memberSince: new Date() },
+          user: { name: req.user.name || 'User', email: req.user.email || 'user@careerguide.ai', level: 1, xp: 10, xpToNextLevel: 90, badges: [{ name: 'Welcome Explorer', icon: '🌟' }], surveyCompleted: false, memberSince: new Date() },
           savedCareers: [],
           savedCareersCount: 0,
           surveysCompleted: 0,

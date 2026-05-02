@@ -20,6 +20,11 @@
   transition: all var(--transition-fast);
 }
 .navLink:hover { color: var(--accent); background: var(--accent-gradient-subtle); }
+.active { 
+  color: var(--accent-light); 
+  background: var(--accent-gradient-subtle);
+  box-shadow: inset 0 0 0 1px var(--accent-subtle);
+}
 .actions { display: flex; align-items: center; gap: 12px; }
 .themeToggle {
   width: 36px; height: 36px; border-radius: 50%; display: flex;

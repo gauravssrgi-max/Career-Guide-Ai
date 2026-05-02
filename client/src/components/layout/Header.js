@@ -9,6 +9,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import LoginModal from '../LoginModal';
@@ -18,6 +19,14 @@ export default function Header() {
   const { user, logout, isAuthenticated } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [showLogin, setShowLogin] = useState(false);
+  const pathname = usePathname();
+
+  const navLinks = [
+    { name: 'Survey', href: '/survey' },
+    { name: 'Careers', href: '/careers' },
+    { name: 'AI Mentor', href: '/chat' },
+    { name: 'Dashboard', href: '/dashboard', auth: true },
+  ];
 
   return (
     <>
@@ -29,10 +38,19 @@ export default function Header() {
           </Link>
 
           <nav className={styles.nav}>
-            <Link href="/survey" className={styles.navLink}>Survey</Link>
-            <Link href="/careers" className={styles.navLink}>Careers</Link>
-            <Link href="/chat" className={styles.navLink}>AI Mentor</Link>
-            {isAuthenticated && <Link href="/dashboard" className={styles.navLink}>Dashboard</Link>}
+            {navLinks.map((link) => {
+              if (link.auth && !isAuthenticated) return null;
+              const isActive = pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href));
+              return (
+                <Link 
+                  key={link.href} 
+                  href={link.href} 
+                  className={`${styles.navLink} ${isActive ? styles.active : ''}`}
+                >
+                  {link.name}
+                </Link>
+              );
+            })}
           </nav>
 
           <div className={styles.actions}>
@@ -41,7 +59,9 @@ export default function Header() {
             </button>
             {isAuthenticated ? (
               <div className={styles.userMenu}>
-                <span className={styles.userName}>{user?.name?.split(' ')[0]}</span>
+                <span className={styles.userName} title={user?.email}>
+                  {user?.name || user?.email?.split('@')[0]}
+                </span>
                 <button onClick={logout} className="btn btn-ghost btn-sm">Logout</button>
               </div>
             ) : (

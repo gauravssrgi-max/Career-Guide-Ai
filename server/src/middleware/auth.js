@@ -12,7 +12,7 @@ const auth = async (req, res, next) => {
 
     // Demo mode — no DB
     if (decoded.userId === 'demo-user-id') {
-      req.user = { _id: 'demo-user-id', name: 'Demo User', email: 'demo@careerguide.ai', savedCareers: [], badges: [], level: 1, xp: 10, surveyCompleted: false };
+      req.user = { _id: 'demo-user-id', name: 'User', email: 'user@careerguide.ai', savedCareers: [], badges: [], level: 1, xp: 10, surveyCompleted: false };
       req.userId = 'demo-user-id';
       return next();
     }
