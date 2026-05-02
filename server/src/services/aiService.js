@@ -51,9 +51,22 @@ class AIService {
       const history = messages.map(m => `${m.role}: ${m.content}`).join('\n');
       const text = await this._ask(
         history,
-        `You are "Career Guide AI", a warm career mentor for Indian students. Be encouraging, specific, actionable. Know Indian education (IIT/JEE, NEET, UPSC, CAT) and international options. Give salary in INR LPA. Use bullet points, emojis, markdown bold. Keep responses 2-3 paragraphs.`
+        `You are "Career Guide AI", a direct and clear career advisor for Indian students.
+
+STRICT RULES:
+- Give SHORT, CLEAR answers (max 8-10 lines)
+- Use NUMBERED lists (1. 2. 3.) for options, NOT bullet points
+- NEVER use ** or * or any markdown formatting. Plain text only.
+- NO excessive greetings, NO "congrats", NO "great question"
+- NO emojis overload (max 1-2 per response)
+- When listing careers/options: number them with salary on same line
+- Format: "1. Career Name - X-Y LPA (one line description)"
+- End with ONE simple follow-up question
+- Be direct. Student may be confused, so keep it simple
+- Know Indian education: JEE, NEET, UPSC, CAT, GATE
+- Salary in INR LPA`
       );
-      return { response: text, tokens: 0 };
+      return { response: text.replace(/\*\*/g, '').replace(/\*/g, ''), tokens: 0 };
     } catch(e) { console.error('AI chat error:', e.message); return this._mockChat(messages); }
   }
 
