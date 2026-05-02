@@ -1,6 +1,20 @@
+/**
+ * Chat Page — AI Career Mentor Interface
+ * 
+ * This component provides a real-time chat interface where students
+ * can interact with the AI career mentor. Features include:
+ * - Suggested starter questions for quick access
+ * - Auto-scrolling message feed
+ * - Typing indicator while AI processes
+ * - Formatted numbered responses with highlighted career names
+ * 
+ * @author Gaurav Kumar Shah
+ */
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import api from '../../lib/api';
+
+// Quick suggestions shown in the sidebar to help students get started
 
 const suggestions = [
   'What career is best for me?',

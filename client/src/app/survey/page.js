@@ -1,3 +1,14 @@
+/**
+ * Career Survey — Multi-step Interest & Skill Assessment
+ * 
+ * Guides the student through 6 steps to understand their interests,
+ * skills, personality, and goals. Results are sent to the AI engine
+ * for personalized career recommendations.
+ * 
+ * Steps: Interests → Skills → Personality → Budget → Location → Confusion Level
+ * 
+ * @author Gaurav Kumar Shah
+ */
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
