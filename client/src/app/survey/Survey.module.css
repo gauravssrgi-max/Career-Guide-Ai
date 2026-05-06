@@ -1,0 +1,116 @@
+.surveyPage {
+  min-height: calc(100vh - 64px);
+  padding: 40px 16px;
+}
+
+.container {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.progressSection {
+  margin-bottom: 40px;
+}
+
+.progressInfo {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.question {
+  text-align: center;
+  margin-bottom: 32px;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.optionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  gap: 16px;
+}
+
+.option {
+  cursor: pointer;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: center;
+  transition: all var(--transition-fast);
+  border: 1.5px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.option:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.optionSelected {
+  border-color: var(--accent) !important;
+  background: var(--accent-gradient-subtle) !important;
+  box-shadow: 0 0 20px rgba(99,102,241,0.2) !important;
+}
+
+.optionIcon {
+  font-size: 1.5rem;
+  margin-bottom: 4px;
+}
+
+.optionLabel {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.optionSelected .optionLabel {
+  color: var(--accent-light);
+}
+
+.optionDesc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  opacity: 0.8;
+}
+
+.navigation {
+  display: flex;
+  gap: 16px;
+  margin-top: 48px;
+}
+
+.loadingPage {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.loadingCard {
+  text-align: center;
+  animation: fadeIn 0.5s ease-out;
+  max-width: 400px;
+}
+
+.confusionHeader {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+@media (max-width: 600px) {
+  .optionGrid {
+    grid-template-columns: 1fr;
+  }
+  .navigation {
+    flex-direction: column-reverse;
+  }
+  .navigation button {
+    width: 100%;
+  }
+  .surveyPage {
+    padding: 32px 16px;
+  }
+}

@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../lib/api';
+import styles from './Survey.module.css';
 
 const surveySteps = [
   {
@@ -112,7 +113,7 @@ export default function SurveyPage() {
 
   const handleConfusionAnswer = (qId, value) => {
     setAnswers({ ...answers, [qId]: value });
-    if (confusionStep < confusionQuestions.length - 1) setConfusionStep(confusionStep + 1);
+    if (confusionStep < 3 - 1) setConfusionStep(confusionStep + 1);
     else { setShowConfusion(false); handleSubmit({ ...answers, [qId]: value }); }
   };
 
@@ -144,8 +145,8 @@ export default function SurveyPage() {
 
   if (loading) {
     return (
-      <div style={S.loadingPage}>
-        <div style={S.loadingCard}>
+      <div className={styles.loadingPage}>
+        <div className={styles.loadingCard}>
           <div className="spinner" style={{width:48,height:48,borderWidth:3,margin:'0 auto'}} />
           <h2 style={{marginTop:24}}>🧠 AI is analyzing your profile...</h2>
           <p style={{color:'var(--text-secondary)',marginTop:8}}>Finding the perfect careers for you</p>
@@ -155,20 +156,25 @@ export default function SurveyPage() {
   }
 
   if (showConfusion) {
-    const q = confusionQuestions[confusionStep];
+    const q = [
+      { id: 'physicalWorkComfort', title: 'Are you comfortable with physical work?', options: [{ value: 'yes', label: '💪 Yes' }, { value: 'no', label: '🧠 No, prefer desk work' }, { value: 'maybe', label: '🤷 Maybe' }] },
+      { id: 'riskTolerance', title: 'Income preference?', options: [{ value: 'stable', label: '🏦 Stable income' }, { value: 'high-risk-high-reward', label: '🚀 High risk, high reward' }, { value: 'moderate', label: '⚖️ Moderate' }] },
+      { id: 'learningPreference', title: 'Study or hands-on?', options: [{ value: 'study', label: '📚 Love studying' }, { value: 'practical', label: '🔧 Prefer practical' }, { value: 'both', label: '🔄 Both' }] },
+    ][confusionStep];
+
     return (
-      <div style={S.page}>
-        <div className="container" style={{maxWidth:600}}>
-          <div style={S.confusionHeader}>
-            <span style={{fontSize:'2rem'}}>🤗</span>
-            <h2>Let's simplify things for you</h2>
-            <p style={{color:'var(--text-secondary)'}}>Quick questions to narrow down ({confusionStep + 1}/{confusionQuestions.length})</p>
+      <div className={styles.surveyPage}>
+        <div className={styles.container}>
+          <div className={styles.confusionHeader}>
+            <span style={{fontSize:'2.5rem'}}>🤗</span>
+            <h2 className="heading-md">Let's simplify things</h2>
+            <p className="text-sm" style={{color:'var(--text-secondary)'}}>Quick questions to narrow down ({confusionStep + 1}/3)</p>
           </div>
-          <h3 style={{textAlign:'center',margin:'24px 0'}}>{q.title}</h3>
-          <div style={S.optionGrid}>
+          <h3 className="heading-sm" style={{textAlign:'center',margin:'32px 0'}}>{q.title}</h3>
+          <div className={styles.optionGrid}>
             {q.options.map(o => (
-              <button key={o.value} className="card" style={S.option} onClick={() => handleConfusionAnswer(q.id, o.value)}>
-                <span style={{fontSize:'1.2rem'}}>{o.label}</span>
+              <button key={o.value} className={`${styles.option} card`} onClick={() => handleConfusionAnswer(q.id, o.value)}>
+                <span className={styles.optionLabel}>{o.label}</span>
               </button>
             ))}
           </div>
@@ -180,61 +186,47 @@ export default function SurveyPage() {
   const currentStep = surveySteps[step];
 
   return (
-    <div style={S.page} className="page-enter">
-      <div className="container" style={{maxWidth:700}}>
-        {/* Progress */}
-        <div style={S.progressSection}>
-          <div style={S.progressInfo}>
+    <div className={`${styles.surveyPage} page-enter`}>
+      <div className={styles.container}>
+        <div className={styles.progressSection}>
+          <div className={styles.progressInfo}>
             <span className="text-sm" style={{color:'var(--text-secondary)'}}>Step {step + 1} of {totalSteps}</span>
             <span className="text-sm" style={{color:'var(--accent)',fontWeight:600}}>{Math.round(progress)}%</span>
           </div>
           <div className="progress-bar"><div className="progress-bar-fill" style={{width:`${progress}%`}} /></div>
         </div>
 
-        {/* Question */}
-        <div style={S.question} key={step}>
+        <div className={styles.question} key={step}>
           <h2 className="heading-md">{currentStep.title}</h2>
-          <p style={{color:'var(--text-secondary)',marginTop:4}}>{currentStep.subtitle}</p>
+          <p className="text-sm" style={{color:'var(--text-secondary)',marginTop:4}}>{currentStep.subtitle}</p>
         </div>
 
-        {/* Options */}
-        <div style={S.optionGrid}>
+        <div className={styles.optionGrid}>
           {currentStep.options.map(o => {
             const selected = currentStep.type === 'multi'
               ? (answers[currentStep.id] || []).includes(o.value)
               : (currentStep.id === 'confusion' ? confusionLevel === o.value : answers[currentStep.id] === o.value);
             return (
-              <button key={o.value} className="card" onClick={() => handleSelect(currentStep, o.value)}
-                style={{ ...S.option, borderColor: selected ? 'var(--accent)' : 'var(--border)', background: selected ? 'var(--accent-gradient-subtle)' : 'var(--bg-secondary)', boxShadow: selected ? '0 0 20px rgba(99,102,241,0.3)' : 'none' }}>
-                <span style={{fontSize:'1.15rem',fontWeight:700,color: selected ? 'var(--accent-light)' : 'var(--text-primary)'}}>{o.label}</span>
-                {o.desc && <span className="text-sm" style={{color: selected ? 'var(--accent-light)' : '#cbd5e1',opacity: selected ? 1 : 0.85}}>{o.desc}</span>}
+              <button 
+                key={o.value} 
+                className={`${styles.option} card ${selected ? styles.optionSelected : ''}`} 
+                onClick={() => handleSelect(currentStep, o.value)}
+              >
+                <span className={styles.optionLabel}>{o.label}</span>
+                {o.desc && <span className={styles.optionDesc}>{o.desc}</span>}
               </button>
             );
           })}
         </div>
 
-        {/* Navigation */}
-        <div style={S.nav}>
+        <div className={styles.navigation}>
           {step > 0 && <button className="btn btn-secondary" onClick={() => setStep(step - 1)}>← Back</button>}
-          <div style={{flex:1}} />
+          <div style={{flex:1}} className="mobile-hide" />
           <button className="btn btn-primary" onClick={nextStep} disabled={!canProceed()}>
-            {step === totalSteps - 1 ? 'Get Results ✨' : 'Next →'}
+            {step === totalSteps - 1 ? 'Get Results ✨' : 'Next Step →'}
           </button>
         </div>
       </div>
     </div>
   );
 }
-
-const S = {
-  page: { minHeight: 'calc(100vh - 64px)', padding: '40px 16px' },
-  progressSection: { marginBottom: 40 },
-  progressInfo: { display: 'flex', justifyContent: 'space-between', marginBottom: 8 },
-  question: { textAlign: 'center', marginBottom: 32, animation: 'fadeIn 0.4s ease-out' },
-  optionGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 },
-  option: { cursor: 'pointer', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 4, textAlign: 'center', transition: 'all 0.2s' },
-  nav: { display: 'flex', gap: 16, marginTop: 40 },
-  loadingPage: { minHeight: 'calc(100vh - 64px)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  loadingCard: { textAlign: 'center', animation: 'fadeIn 0.5s ease-out' },
-  confusionHeader: { textAlign: 'center', marginBottom: 24 },
-};

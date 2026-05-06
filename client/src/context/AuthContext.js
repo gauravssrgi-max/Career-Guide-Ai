@@ -7,12 +7,12 @@ const AuthContext = createContext({});
 
 const isGenericName = (name) => {
   const normalized = (name || '').trim().toLowerCase();
-  return !normalized || normalized === 'user' || normalized === 'demo' || normalized === 'demo user';
+  return !normalized || normalized === 'user' || normalized === 'original user';
 };
 
 const sessionIdentity = (sessionUser) => ({
   _id: sessionUser?.id,
-  name: sessionUser?.name || sessionUser?.email?.split('@')[0] || 'User',
+  name: sessionUser?.name || sessionUser?.email?.split('@')[0] || 'Original User',
   email: sessionUser?.email || '',
   avatar: sessionUser?.image || '',
 });

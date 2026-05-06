@@ -1,3 +1,10 @@
+process.on("uncaughtException", (err) => {
+  console.error("UNCAUGHT EXCEPTION:", err);
+});
+
+process.on("unhandledRejection", (err) => {
+  console.error("UNHANDLED REJECTION:", err);
+});
 require('dotenv').config();
 
 const express = require('express');
@@ -5,66 +12,71 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+
 const connectDB = require('./config/database');
 const errorHandler = require('./middleware/errorHandler');
 
-// Route imports
+// Routes
 const authRoutes = require('./routes/auth');
 const surveyRoutes = require('./routes/survey');
 const careerRoutes = require('./routes/careers');
 const aiRoutes = require('./routes/ai');
 const userRoutes = require('./routes/user');
+const copilotRoutes = require('./routes/copilot');
+const phase2Routes = require('./routes/phase2');
 
 const app = express();
+
+// ✅ Always use env port
 const PORT = process.env.PORT || 5000;
 
-// ─── Connect Database ─────────────────────────────────────────
+// ─── Connect DB ─────────────────────────────
 connectDB();
 
-// ─── Middleware ────────────────────────────────────────────────
+// ─── Middleware ─────────────────────────────
 app.use(helmet());
+
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:3000',
   credentials: true,
 }));
+
 app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Rate limiting
+// ─── Rate Limiting ──────────────────────────
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 100,
-  message: { success: false, message: 'Too many requests, please try again later.' },
 });
 app.use('/api/', limiter);
 
-// AI endpoint has stricter rate limiting
 const aiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
-  message: { success: false, message: 'Too many AI requests, please try again later.' },
 });
 app.use('/api/ai/', aiLimiter);
 
-// ─── Routes ───────────────────────────────────────────────────
+// ─── Routes ─────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/survey', surveyRoutes);
 app.use('/api/careers', careerRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/copilot', copilotRoutes);
+app.use('/api/phase2', phase2Routes);
 
-// Health check
+// ✅ Health check
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
-    message: 'Career Guide AI API is running',
-    version: '1.0.0',
-    timestamp: new Date().toISOString(),
+    message: 'API running',
+    port: PORT,
   });
 });
 
-// 404 handler
+// 404
 app.use('*', (req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
 });
@@ -72,15 +84,7 @@ app.use('*', (req, res) => {
 // Error handler
 app.use(errorHandler);
 
-// ─── Start Server ─────────────────────────────────────────────
+// ─── Start Server ───────────────────────────
 app.listen(PORT, () => {
-  console.log(`
-  ╔══════════════════════════════════════════╗
-  ║   🚀 Career Guide AI API Server         ║
-  ║   Running on port ${PORT}                ║
-  ║   Environment: ${process.env.NODE_ENV || 'development'}            ║
-  ╚══════════════════════════════════════════╝
-  `);
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
-
-module.exports = app;

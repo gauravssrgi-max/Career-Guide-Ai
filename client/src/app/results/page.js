@@ -103,10 +103,17 @@ export default function ResultsPage() {
 const S = {
   page: { minHeight: 'calc(100vh - 64px)', padding: '48px 16px' },
   center: { minHeight: 'calc(100vh - 64px)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  grid: { display: 'grid', gap: 20 },
+  grid: { display: 'grid', gap: 24 },
   careerCard: { animation: 'fadeInUp 0.5s ease-out both', padding: 28 },
   cardTop: { display: 'flex', gap: 16, alignItems: 'flex-start' },
   rank: { width: 40, height: 40, borderRadius: 'var(--radius-md)', background: 'var(--accent-gradient)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1rem', flexShrink: 0 },
-  stats: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, padding: '16px 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' },
+  stats: { 
+    display: 'grid', 
+    gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', 
+    gap: 16, 
+    padding: '16px 0', 
+    borderTop: '1px solid var(--border)', 
+    borderBottom: '1px solid var(--border)' 
+  },
   statItem: { display: 'flex', flexDirection: 'column', gap: 4 },
 };

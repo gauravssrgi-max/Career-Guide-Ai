@@ -1,19 +1,3 @@
-/**
- * AI Service for Career Guide Platform
- * 
- * This module handles all AI-related functionality including:
- * - Career recommendations based on student survey responses
- * - Chat-based career mentoring using Gemini with optional OpenAI fallback
- * - Skill gap analysis for target careers
- * - Risk assessment for different career paths
- * 
- * Uses Gemini first when available, then optional OpenAI fallback,
- * then curated mock responses for offline/demo mode.
- * 
- * @author Gaurav Kumar Shah
- * @version 2.0
- */
-
 const OpenAI = require('openai');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
@@ -157,7 +141,7 @@ Recommend exactly 3 careers. Return ONLY valid JSON:
       if (this.isConnected && ALLOW_OPENAI_FALLBACK) {
         console.log('🔄 Trying OpenAI...');
         const conversationHistory = messages.map(msg => `${msg.role}: ${msg.content}`).join('\n');
-        const mentorInstructions = `You are "Career Guide AI Agent", a professional career strategist for Indian students. AGENT PROTOCOLS: Analyze user background. Greet by name. Ask for Qualification -> Stream -> Interest. Provide 3-4 careers with INR LPA salaries. NO markdown. 2 emojis max.`;
+        const mentorInstructions = `You are "Career Guide AI". RULES: 1. GREETINGS: Ask for Qualification/Interests. 2. QUALIFICATIONS: List Gov Jobs, Corporate, and Degrees. 3. ROADMAPS: Detailed with resources/YT. 4. Numbered list format.`;
         const aiResponse = await this._askAI(conversationHistory, mentorInstructions);
         return { response: this._cleanAIResponse(aiResponse), tokens: 0 };
       }
@@ -183,12 +167,13 @@ Recommend exactly 3 careers. Return ONLY valid JSON:
    */
   async _askGemini(messages) {
     try {
-      const prompt = messages.map(m => `${m.role}: ${m.content}`).join('\n');
-      const result = await this.geminiModel.generateContent(prompt + "\nAssistant: Provide clear career advice for an Indian student. No markdown.");
+      const instructions = `You are "Career Guide AI". RULES: 1. GREETINGS: Greet and ask for Qualification/Interests. 2. QUALIFICATIONS (10th/12th): List ALL paths including Govt Jobs, Corporate, and Education. 3. ROADMAPS: Detailed with links. 4. Numbered list format ONLY.`;
+      const prompt = instructions + "\n" + messages.map(m => `${m.role}: ${m.content}`).join('\n') + "\nAssistant:";
+      const result = await this.geminiModel.generateContent(prompt);
       const response = await result.response;
       return this._cleanAIResponse(response.text());
     } catch (err) {
-      console.error('Gemini Fallback failed:', err.message);
+      console.error('Gemini failed:', err.message);
     }
     return null;
   }

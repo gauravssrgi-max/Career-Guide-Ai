@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Career Guide AI — Your Personal AI Career Mentor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-inner">
+            <a href="#" class="logo">
+                <span>🎯</span>
+                <span>Career<span class="logo-accent">Guide</span> AI</span>
+            </a>
+            <nav class="nav">
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#how-it-works" class="nav-link">How it Works</a>
+                <a href="#" class="nav-link">AI Mentor</a>
+            </nav>
+            <div class="nav-actions">
+                <button id="theme-toggle" class="btn-ghost" title="Toggle Theme">🌙</button>
+                <button id="login-btn" class="btn btn-primary btn-sm">Get Started</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <main>
+        <section class="hero container">
+            <div class="hero-content">
+                <div class="hero-left">
+                    <div class="hero-badge">AI-Powered Career Guidance</div>
+                    <h1 class="heading-xl">Find Your <span class="text-gradient">Dream Career</span> with AI</h1>
+                    <p class="hero-desc">
+                        Not sure what career to choose? Our AI mentor analyzes your interests, personality, 
+                        and goals to recommend the perfect path — with detailed roadmaps, costs, and more.
+                    </p>
+                    <div class="hero-cta">
+                        <button class="btn btn-primary btn-lg">Start Career Journey →</button>
+                        <button class="btn btn-secondary btn-lg">Talk to AI Mentor</button>
+                    </div>
+                </div>
+                <div class="hero-right">
+                    <div class="hero-visual">
+                        <div class="orb orb-1"></div>
+                        <div class="orb orb-2"></div>
+                        <div class="hero-card">
+                            <div style="font-size: 3rem; margin-bottom: 16px;">🎯</div>
+                            <h3>Your AI Career Mentor</h3>
+                            <p>Analyzing 100+ career paths to find your perfect match</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Login Modal -->
+    <div id="modal-overlay" class="modal-overlay"></div>
+    <div id="modal-content" class="modal-content">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <span style="font-size: 2.2rem;">🎯</span>
+            <h2 style="font-size: 1.4rem; font-weight: 700; margin-top: 10px;">Welcome Back</h2>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">Continue your career journey</p>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px;">
+            <button class="btn btn-secondary" style="width: 100%;">Continue with Google</button>
+            <button class="btn btn-secondary" style="width: 100%; background: #24292e; color: white;">Continue with GitHub</button>
+        </div>
+        <button id="modal-close" class="btn btn-ghost" style="position: absolute; top: 10px; right: 10px;">✕</button>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

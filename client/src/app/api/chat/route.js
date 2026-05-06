@@ -1,12 +1,3 @@
-/**
- * AI Chat API Route — Serverless Backend
- * 
- * This runs directly on Vercel as a serverless function,
- * so no separate Express server is needed for production.
- * Connects to Gemini first for career mentoring, with optional OpenAI fallback.
- * 
- * @author Gaurav Kumar Shah
- */
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextResponse } from 'next/server';
@@ -27,21 +18,17 @@ function cleanAIResponse(text) {
 }
 
 // System instructions for the AI mentor agent
-const MENTOR_INSTRUCTIONS = `You are "Career Guide AI Agent", a professional career strategist for Indian students.
+const MENTOR_INSTRUCTIONS = `You are "Career Guide AI". Provide career strategy for Indian students.
 
-AGENT PROTOCOLS:
-1. PERSONALIZED STRATEGY: Analyze the user's background (Qualification, Stream, Interests) before giving advice.
-2. STEP-BY-STEP GUIDANCE:
-   - If greeting: Greet by name and ask for Qualification, Interests, and Work Environment (Physical vs Office).
-   - If Qualification given: ALWAYS ask for their specific Stream (PCM, Arts, Trade, etc.).
-   - If Stream given: Provide 3-4 high-growth career paths with INR LPA salaries.
-3. CLEAR COMMUNICATION: Use direct, simple language. No markdown formatting.
-
-STRICT FORMATTING:
-- List options using 1. 2. 3. (each on a new line).
-- NEVER use markdown like **, *, ###, headings, or bullet symbols.
-- Max 2 emojis.
-- End with a single follow-up question.`;
+STRICT RULES:
+1. GREETINGS: If the user says "hi/hello", greet them and ask for their current Qualification and Interests.
+2. QUALIFICATIONS (10th/12th): If info is provided, list ALL major paths:
+   - Government Jobs (SSC, Defence, Railway, etc.)
+   - Corporate Careers (Tech, Finance, Marketing, etc.)
+   - Higher Education (Degrees, Diplomas, Trades)
+3. ROADMAPS: For "roadmap" requests, give detailed steps, resources, and YouTube search links.
+4. FORMAT: Use "1. Option - Description" format. Plain text only (NO markdown).
+5. BREVITY: Keep each point to 2 sentences. No repetitive intros.`;
 
 // Intelligent fallback logic for the agent when AI providers are offline
 function getDemoResponse(lastMessage) {
@@ -127,7 +114,7 @@ export async function POST(request) {
         const prompt = [
           MENTOR_INSTRUCTIONS,
           ...messages.map(m => `${m.role}: ${m.content}`),
-          "Assistant: Provide professional career advice in plain text. No markdown headings or bullet symbols. Use numbered lists."
+          "Assistant:"
         ].join('\n');
         const result = await model.generateContent(prompt);
         const response = await result.response;

@@ -4,10 +4,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../lib/api';
+import styles from './Dashboard.module.css';
 
 const isGenericName = (name) => {
   const normalized = (name || '').trim().toLowerCase();
-  return !normalized || normalized === 'user' || normalized === 'demo' || normalized === 'demo user';
+  return !normalized || normalized === 'user' || normalized === 'original user';
 };
 
 export default function DashboardPage() {
@@ -24,18 +25,18 @@ export default function DashboardPage() {
       .catch(() => setLoading(false));
   }, [isAuthenticated, authLoading, router]);
 
-  if (loading) return <div style={{ minHeight: 'calc(100vh - 64px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="spinner" style={{ width: 40, height: 40 }} /></div>;
-  if (!dashboard) return <div style={{ minHeight: 'calc(100vh - 64px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p>Unable to load</p></div>;
+  if (loading) return <div className={styles.dashboard} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="spinner" style={{ width: 40, height: 40 }} /></div>;
+  if (!dashboard) return <div className={styles.dashboard} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p>Unable to load dashboard</p></div>;
 
   const { user: u, savedCareers, surveysCompleted, stats } = dashboard;
   const displayName = isGenericName(u?.name)
-    ? (authUser?.name || authUser?.email?.split('@')[0] || 'User')
+    ? (authUser?.name || authUser?.email?.split('@')[0] || 'Original User')
     : u.name;
 
   return (
-    <div style={{ minHeight: 'calc(100vh - 64px)', padding: '40px 16px' }} className="page-enter">
-      <div className="container" style={{ maxWidth: 1000 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
+    <div className={`${styles.dashboard} page-enter`}>
+      <div className={styles.container}>
+        <div className={styles.header}>
           <div>
             <h1 className="heading-md">Welcome, <span className="text-gradient">{displayName}</span> 👋</h1>
             <p className="text-sm" style={{ color: 'var(--text-secondary)', marginTop: 4 }}>Your career exploration progress</p>
@@ -43,25 +44,34 @@ export default function DashboardPage() {
           <Link href="/survey" className="btn btn-primary btn-sm">New Survey →</Link>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16 }}>
+        <div className={styles.statsGrid}>
           {[
             { icon: '🏆', val: stats.level, label: 'Level' },
             { icon: '📋', val: surveysCompleted, label: 'Surveys' },
             { icon: '💾', val: savedCareers.length, label: 'Saved' },
             { icon: '🎖️', val: stats.totalBadges, label: 'Badges' },
           ].map((s, i) => (
-            <div key={i} className="card" style={{ textAlign: 'center', padding: 24 }}>
-              <span style={{ fontSize: '1.5rem' }}>{s.icon}</span>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: 8 }}>{s.val}</div>
-              <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{s.label}</div>
+            <div key={i} className={`${styles.statCard} card animate-fade-in`} style={{ animationDelay: `${i * 0.1}s` }}>
+              <span className={styles.statIcon}>{s.icon}</span>
+              <div className={styles.statValue}>{s.val}</div>
+              <div className={styles.statLabel}>{s.label}</div>
             </div>
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: 12, marginTop: 32, flexWrap: 'wrap' }}>
-          <Link href="/survey" className="btn btn-secondary">📋 New Survey</Link>
-          <Link href="/chat" className="btn btn-secondary">💬 AI Mentor</Link>
-          <Link href="/careers" className="btn btn-secondary">🔍 Browse Careers</Link>
+        <div className={styles.quickActions}>
+          <Link href="/survey" className={styles.navButton}>
+            <span>📋</span> Survey
+          </Link>
+          <Link href="/chat" className={styles.navButton}>
+            <span>💬</span> AI Mentor
+          </Link>
+          <Link href="/careers" className={styles.navButton}>
+            <span>🔍</span> Careers
+          </Link>
+          <Link href="/copilot" className={styles.navButton}>
+            <span>🚀</span> Copilot
+          </Link>
         </div>
       </div>
     </div>

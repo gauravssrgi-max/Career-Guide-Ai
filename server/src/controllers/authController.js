@@ -4,10 +4,10 @@ const { generateToken } = require('../middleware/auth');
 
 const isDBConnected = () => mongoose.connection.readyState === 1;
 
-const DEMO_USER = {
-  _id: 'demo-user-id',
-  name: 'User',
-  email: 'user@careerguide.ai',
+const ORIGINAL_USER_TEMPLATE = {
+  _id: 'original-user-id',
+  name: 'Original User',
+  email: 'realuser@careerguide.ai',
   savedCareers: [],
   badges: [{ name: 'Welcome Explorer', icon: '🌟', earnedAt: new Date() }],
   preferences: { theme: 'dark' },
@@ -19,7 +19,7 @@ const DEMO_USER = {
 
 const isGenericName = (name) => {
   const normalized = (name || '').trim().toLowerCase();
-  return !normalized || normalized === 'user' || normalized === 'demo' || normalized === 'demo user';
+  return !normalized || normalized === 'user' || normalized === 'original user';
 };
 
 // Register
@@ -32,8 +32,8 @@ exports.register = async (req, res, next) => {
     }
 
     if (!isDBConnected()) {
-      const token = generateToken('demo-user-id');
-      return res.status(201).json({ success: true, data: { user: { ...DEMO_USER, name, email }, token } });
+      const token = generateToken('original-user-id');
+      return res.status(201).json({ success: true, data: { user: { ...ORIGINAL_USER_TEMPLATE, name, email }, token } });
     }
 
     const existingUser = await User.findOne({ email });
@@ -67,8 +67,8 @@ exports.login = async (req, res, next) => {
     }
 
     if (!isDBConnected()) {
-      const token = generateToken('demo-user-id');
-      return res.json({ success: true, data: { user: { ...DEMO_USER, name: req.body.name || 'User', email }, token } });
+      const token = generateToken('original-user-id');
+      return res.json({ success: true, data: { user: { ...ORIGINAL_USER_TEMPLATE, name: req.body.name || 'Original User', email }, token } });
     }
 
     const user = await User.findOne({ email }).select('+password');
@@ -98,8 +98,8 @@ exports.googleAuth = async (req, res, next) => {
     const { googleId, email, name, avatar } = req.body;
 
     if (!isDBConnected()) {
-      const token = generateToken('demo-user-id');
-      return res.json({ success: true, data: { user: { ...DEMO_USER, name, email }, token } });
+      const token = generateToken('original-user-id');
+      return res.json({ success: true, data: { user: { ...ORIGINAL_USER_TEMPLATE, name, email }, token } });
     }
 
     let user = await User.findOne({ $or: [{ googleId }, { email }] });
@@ -139,7 +139,7 @@ exports.googleAuth = async (req, res, next) => {
 exports.getProfile = async (req, res, next) => {
   try {
     if (!isDBConnected()) {
-      return res.json({ success: true, data: DEMO_USER });
+      return res.json({ success: true, data: ORIGINAL_USER_TEMPLATE });
     }
     const user = await User.findById(req.userId).populate('savedCareers');
     res.json({ success: true, data: user });
@@ -152,7 +152,7 @@ exports.getProfile = async (req, res, next) => {
 exports.updateProfile = async (req, res, next) => {
   try {
     if (!isDBConnected()) {
-      return res.json({ success: true, data: DEMO_USER });
+      return res.json({ success: true, data: ORIGINAL_USER_TEMPLATE });
     }
     const { name, preferences } = req.body;
     const updates = {};
